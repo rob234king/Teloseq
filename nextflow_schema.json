@@ -19,7 +19,7 @@
                     "help_text": "reference genome of the sequenced material in fasta format and important that each chr arm as separate fasta entry.",
                     "default": null
                 },
-                "input_read_file": {
+                "input": {
                     "type": "string",
                     "format": "file-path",
                     "description": "Raw fastq file",
@@ -28,7 +28,7 @@
         },
         "required": [
             "reference",
-            "input_read_file"
+            "input"
         ]
     }
 }
