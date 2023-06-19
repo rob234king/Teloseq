@@ -28,7 +28,7 @@
         },
         "required": [
             "reference",
-            "input_read_dir"
+            "input_read_file"
         ]
     }
 }
