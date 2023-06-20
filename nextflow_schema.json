@@ -6,7 +6,7 @@
     "url": "https://github.com/rob234king/Teloseq",
     "type": "object",
     "definitions": {
-        "input_options": {
+        "input": {
             "title": "Input Options",
             "type": "object",
             "fa_icon": "fas fa-terminal",
@@ -32,5 +32,10 @@
             }
 
         }
-    }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input"
+        }
+    ]
 }
