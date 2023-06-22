@@ -29,9 +29,10 @@ file_ch = Channel.fromPath("${params.input}")
 
 workflow {
   telomere_reads(file_ch)
-  mapping(telomere_reads.out.fastq)
+  ref = file(params.reference, checkIfExists: true)
+  mapping(telomere_reads.out.fastq, ref)
   filtering(mapping.output)
-  results(filtering.out.finalbam)
+  results(filtering.out.finalbam, ref)
 }
 
 process telomere_reads {
@@ -39,7 +40,7 @@ process telomere_reads {
     conda 'seqtk seqkit'
 
     input:
-    file input
+    file "input.fastq.gz"
 
     output:
     path "telomere_filtered.fastq.gz", emit: fastq
@@ -53,8 +54,8 @@ process telomere_reads {
 
     script:
     """
-    seqkit stats $input > raw_data_stats.txt
-    seqkit grep -s -R 1:1000 -p "TAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCC" $input > telomere.fastq
+    seqkit stats input.fastq.gz > raw_data_stats.txt
+    seqkit grep -s -R 1:1000 -p "TAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCC" input.fastq.gz > telomere.fastq
     seqkit stats telomere.fastq > Reads_telomere_stats.txt
     seqkit grep -v -s -R -1500:-1 -p "TAACCCTAACCCTAACCCTAACCCTAACCC" telomere.fastq > telomereandnon.fastq
     seqkit stats telomereandnon.fastq > Reads_telomere_nonTelomere_stats.txt
@@ -70,13 +71,14 @@ process mapping {
 
     input:
     path input
+    path ref
 
     output:
     path "telomere_filter_q10.bam"
 
     script:
     """
-    minimap2 -ax map-ont -t 20 ${params.reference} $input | samtools sort -@2 -o telomere_filter.bam
+    minimap2 -ax map-ont -t 20 $ref $input | samtools sort -@2 -o telomere_filter.bam
     samtools index telomere_filter.bam
     samtools view -bq 10 -h telomere_filter.bam > telomere_filter_q10.bam
     samtools index telomere_filter_q10.bam
@@ -112,7 +114,8 @@ process results {
     conda 'samtools pandas numpy coreutils matplotlib seqkit'
 
     input:
-    file input
+    path input
+    path "reference.fasta"
 
     output:
     file "Coverage.csv"
@@ -126,10 +129,11 @@ process results {
     samtools fastq $input | seqkit locate --only-positive-strand -m 1 -p TAACCCTAACCCTAACCCTAACCCTAACCC > locationstelomere.txt
     tac locationstelomere.txt | awk '!a[\$1]++' > locationstelomerelast.txt
     awk -F'\t' '{print \$1" "\$5}' locationstelomerelast.txt | sort -r | tr ' ' '\t' > locationstelomerelast2.txt
-    samtools faidx ${params.reference}
+    samtools faidx reference.fasta
     seqkit bam $input 2>filtered.bam.stats
-    python ${baseDir}/bin/telomerelengthcov.py filtered.bam.stats locationstelomerelast2.txt ${params.reference}.fai
+    python ${baseDir}/bin/telomerelengthcov.py filtered.bam.stats locationstelomerelast2.txt reference.fasta.fai
 
     """
 }
+
 

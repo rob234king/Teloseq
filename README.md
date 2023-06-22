@@ -11,3 +11,9 @@ Nextflow, Java
 #Example command on linux system
 
 nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta --input ./test_data/test.fastq --publishDir test_output
+
+#Running in Epi2me labs via Windows on a laptop
+
+#download epi2me labs and go to workflows->import workflows and enter the URL for this github to download the workflow. 
+
+https://labs.epi2me.io/downloads/
