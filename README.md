@@ -10,7 +10,7 @@ Nextflow, Java
 
 #Example command on linux system
 
-nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta --input ./test_data/test.fastq --publishDir test_output
+nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta.gz --input ./test_data/telomerev1.fastq.gz --publishDir test_output
 
 #Running in Epi2me labs via Windows on a laptop
 
