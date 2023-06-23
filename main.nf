@@ -3,8 +3,8 @@
 /*
  * The following pipeline parameters specify the refence genome
  * and read file can be provided as command line options
- * export PATH="/home/OXFORDNANOLABS/rking/miniconda3/bin:$PATH"
- * export PATH="/home/OXFORDNANOLABS/rking/miniconda3/envs/java11/bin:$PATH"
+ * export PATH="location/miniconda3/bin:$PATH"
+ * export PATH="location/java11/bin:$PATH"
  */
 
 // Declare syntax version
@@ -28,19 +28,47 @@ println """\
 file_ch = Channel.fromPath("${params.input}")
 
 workflow {
-  telomere_reads(file_ch)
+  //check and unzip reference if needed.
   ref = file(params.reference, checkIfExists: true)
-  mapping(telomere_reads.out.fastq, ref)
+  checkReference(ref)
+  uncompressedRefFile = checkReference.out.ref1
+
+  //get stats on telomere reads and filter
+  telomere_reads(file_ch)
+  //map telomere reads to genome
+  mapping(telomere_reads.out.fastq, uncompressedRefFile)
+  //filter bam
   filtering(mapping.output)
-  results(filtering.out.finalbam, ref)
+  //get final telomere arms stats
+  results(filtering.out.finalbam, uncompressedRefFile)
+  //getVersionInfo()
 }
+
+
+  process checkReference {
+    input:
+    path ref
+
+    output:
+    path "reference.fasta", emit: ref1
+    
+    script:
+
+    """
+    if [[ $ref == *.gz ]]; then
+      zcat $ref > reference.fasta
+    else
+      ln -s $ref reference.fasta
+    fi
+    """
+  }
 
 process telomere_reads {
 
     conda 'seqtk seqkit'
 
     input:
-    file "input.fastq.gz"
+    path "input.fastq.gz"
 
     output:
     path "telomere_filtered.fastq.gz", emit: fastq
@@ -49,7 +77,6 @@ process telomere_reads {
     path "Reads_telomere_nonTelomere_stats.txt", emit: stats3
     path "reads_with_cutsites.stats.txt", emit: stats4
     
-
     publishDir "${params.publishDir}", mode: 'copy', overwrite: false
 
     script:
@@ -115,11 +142,11 @@ process results {
 
     input:
     path input
-    path "reference.fasta"
+    path ref2
 
     output:
-    file "Coverage.csv"
-    file "Boxplot_of_Telomere_length.pdf"
+    path "Coverage.csv"
+    path "Boxplot_of_Telomere_length.pdf"
 
     publishDir "${params.publishDir}", mode: 'copy', overwrite: false
 
@@ -129,11 +156,21 @@ process results {
     samtools fastq $input | seqkit locate --only-positive-strand -m 1 -p TAACCCTAACCCTAACCCTAACCCTAACCC > locationstelomere.txt
     tac locationstelomere.txt | awk '!a[\$1]++' > locationstelomerelast.txt
     awk -F'\t' '{print \$1" "\$5}' locationstelomerelast.txt | sort -r | tr ' ' '\t' > locationstelomerelast2.txt
-    samtools faidx reference.fasta
+    samtools faidx $ref2
     seqkit bam $input 2>filtered.bam.stats
-    python ${baseDir}/bin/telomerelengthcov.py filtered.bam.stats locationstelomerelast2.txt reference.fasta.fai
+    python ${baseDir}/bin/telomerelengthcov.py filtered.bam.stats locationstelomerelast2.txt ${ref2}.fai
 
     """
 }
 
+/* process getVersionInfo {
 
+    output:
+    path 'version_info.txt'
+   
+    script:
+    """
+    echo 'Version: ' + getVersion() 
+    echo 'Platform: ' + getParams() 
+    """
+} */

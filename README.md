@@ -1,4 +1,4 @@
-TeloseqV1: a Basic pipeline to analyse telomere enriched data.
+TeloseqV1: Basic pipeline to analyse telomere enriched data.
 
 The reference supplied in test_data was created by aligned HG002 reference to chm13 for naming. The original naming of chr arm subtelomeres conflicted with alignments to chm13 similarity so was corrected based upon this. Subsequently is may be best to use your own chr arm reference if you check and disagree with using chm13 namings.
 
@@ -10,7 +10,7 @@ Nextflow, Java
 
 #Example command on linux system
 
-nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta --input ./test_data/test.fastq --publishDir test_output
+nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta.gz --input ./test_data/telomerev1.fastq.gz --publishDir test_output
 
 #Running in Epi2me labs via Windows on a laptop
 
