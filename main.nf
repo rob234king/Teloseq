@@ -76,17 +76,19 @@ process telomere_reads {
     path "Reads_telomere_stats.txt", emit: stats2
     path "Reads_telomere_nonTelomere_stats.txt", emit: stats3
     path "reads_with_cutsites.stats.txt", emit: stats4
+    path "telomere_filtered_stats.txt", emit: stats5
     
     publishDir "${params.publishDir}", mode: 'copy', overwrite: false
 
     script:
     """
-    seqkit stats input.fastq.gz > raw_data_stats.txt
+    seqkit stats -a input.fastq.gz > raw_data_stats.txt
     seqkit grep -s -R 1:1000 -p "TAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCC" input.fastq.gz > telomere.fastq
-    seqkit stats telomere.fastq > Reads_telomere_stats.txt
+    seqkit stats -a telomere.fastq > Reads_telomere_stats.txt
     seqkit grep -v -s -R -1500:-1 -p "TAACCCTAACCCTAACCCTAACCCTAACCC" telomere.fastq > telomereandnon.fastq
-    seqkit stats telomereandnon.fastq > Reads_telomere_nonTelomere_stats.txt
+    seqkit stats -a telomereandnon.fastq > Reads_telomere_nonTelomere_stats.txt
     seqkit grep -v -s -p "CATCCTCCATCCTC","TACCTCATACCT","CTGAGTCCTGAGTC" telomereandnon.fastq > telomere_filtered.fastq
+    seqkit stats -a telomere_filtered.fastq > telomere_filtered_stats.txt
     gzip telomere_filtered.fastq
     seqkit grep -s -p "GATATC" telomere_filtered.fastq.gz | seqkit stats -a - > reads_with_cutsites.stats.txt
     """
