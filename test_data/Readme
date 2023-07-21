@@ -1,1 +1,2 @@
 Reduced telomere enriched data set for testing the pipeline but the results will not show anything.
+Included a pod5 reduced telomere containing read data set for basecalling test that you get telomere. All the 190 reads included will have telomere, some just telomere but others will be telomere and subtelomere sequence. all from HG002 control. Output file is given to check output matches.

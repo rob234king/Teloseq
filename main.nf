@@ -149,6 +149,7 @@ process results {
     output:
     path "Coverage.csv"
     path "Boxplot_of_Telomere_length.pdf"
+    path "Per_Read_telomere_length.csv"
 
     publishDir "${params.publishDir}", mode: 'copy', overwrite: false
 

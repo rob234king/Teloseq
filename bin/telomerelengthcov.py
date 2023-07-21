@@ -34,7 +34,10 @@ dfmotif = parse_motif(input_file2)
 rslt_df = dfreads[dfreads['Type'] == 'Primary'] 
 rslt_df2 = rslt_df[rslt_df['Strand'] == '1'] 
 dfmerged=rslt_df2.merge(dfmotif,on='Read')
-#print(rslt_df.head())
+
+#per_Read information including telomere length
+dfmerged.to_csv('Per_Read_telomere_length.csv',index=False)
+
 #coverage
 Summary=dfmerged.groupby('Ref').agg(**{
         'Coverage': ('Read', 'count'),
