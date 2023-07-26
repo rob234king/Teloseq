@@ -18,6 +18,11 @@ The pipeline is prepared to manage its software requirements automatically using
 conda. If you have it available you can enable this functionality with the
 `-profile conda` argument.
 
+## Using mamba
+
+If you also have mamba installed, you can take advantage of its performance
+improvements by using `-profile conda,mamba`
+
 # Running in Epi2me labs via Windows on a laptop
 
 # download epi2me labs and go to workflows->import workflows and enter the URL for this github to download the workflow. 
