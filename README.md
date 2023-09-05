@@ -11,9 +11,12 @@ Nextflow, Java
 ## Example command on linux system
 
 #no barcodes. Recommended to demultiplex using dorado during basecalling.
+
+
 nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta.gz --input ./test_data/telomerev1.fastq.gz --publishDir test_output profile conda,mamba
 
 #with barcode demultiplexing if basecalling using bonito custom model. Format is comma separated barcodes, barcode scripts in bin to be expanded as more barcodes added. The number after : is the number of mismatches used with edlib.
+
 
 nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta.gz --input ./test_data/Barcode_test.fastq.gz --publishDir test_output2s --barcode Barcode01:5,Barcode02:5,Barcode05:5 -profile conda,mamba
 
