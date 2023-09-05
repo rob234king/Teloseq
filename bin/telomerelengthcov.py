@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
 import sys
+import os
 import matplotlib.pyplot as plt
 
 input_file = sys.argv[1]
 input_file2 = sys.argv[2]
 input_file3 = sys.argv[3]
+input_basename = os.path.basename(input_file)
 
 def parse_seqkit(fname):
     cols = {
@@ -36,7 +38,7 @@ rslt_df2 = rslt_df[rslt_df['Strand'] == '1']
 dfmerged=rslt_df2.merge(dfmotif,on='Read')
 
 #per_Read information including telomere length
-dfmerged.to_csv('Per_Read_telomere_length.csv',index=False)
+dfmerged.to_csv(f'{input_basename}_Per_Read_telomere_length.csv',index=False)
 
 #coverage
 Summary=dfmerged.groupby('Ref').agg(**{
@@ -53,7 +55,7 @@ referenceset = pd.read_csv(input_file3, sep="\t", header=None, usecols=cols.keys
 
 Summary2=referenceset['Ref'].to_frame().merge(Summary,on='Ref',how='left').fillna(0)
 
-Summary2.to_csv('Coverage.csv',index=False)
+Summary2.to_csv(f'{input_basename}_Coverage.csv',index=False)
 
 
 #summarise read coverage for each chr arm with boxplot
@@ -67,4 +69,4 @@ dfmerged.boxplot(column='Telomere_length',by='Ref',fontsize=12,ax=ax1,rot=90)
 ax1.xaxis.set_label_text("Chr arm")
 fig.subplots_adjust(hspace=0.5)
 
-fig.savefig('Boxplot_of_Telomere_length.pdf')
+fig.savefig(f'{input_basename}_Boxplot_of_Telomere_length.pdf')
