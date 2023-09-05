@@ -1,4 +1,4 @@
-# TeloseqV1: Basic pipeline to analyse telomere enriched data.
+# TeloseqV1.1: Basic pipeline to analyse telomere enriched data.
 
 The reference supplied in test_data was created by aligned HG002 reference to chm13 for naming. The original naming of chr arm subtelomeres conflicted with alignments to chm13 similarity so was corrected based upon this. Subsequently is may be best to use your own chr arm reference if you check and disagree with using chm13 namings.
 
@@ -10,7 +10,12 @@ Nextflow, Java
 
 ## Example command on linux system
 
-nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta.gz --input ./test_data/telomerev1.fastq.gz --publishDir test_output
+#no barcodes. Recommended to demultiplex using dorado during basecalling.
+nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta.gz --input ./test_data/telomerev1.fastq.gz --publishDir test_output profile conda,mamba
+
+#with barcode demultiplexing if basecalling using bonito custom model. Format is comma separated barcodes, barcode scripts in bin to be expanded as more barcodes added. The number after : is the number of mismatches used with edlib.
+
+nextflow run main.nf --reference ./test_data/HG002qpMP_reference.fasta.gz --input ./test_data/Barcode_test.fastq.gz --publishDir test_output2s --barcode Barcode01:5,Barcode02:5,Barcode05:5 -profile conda,mamba
 
 ## Using conda
 
@@ -23,8 +28,8 @@ conda. If you have it available you can enable this functionality with the
 If you also have mamba installed, you can take advantage of its performance
 improvements by using `-profile conda,mamba`
 
-## Running in Epi2me labs via Windows on a laptop
+## Running in Epi2me labs via Windows on a laptop (next release)
 
-## download epi2me labs and go to workflows->import workflows and enter the URL for this github to download the workflow. 
+## download epi2me labs and go to workflows->import workflows and enter the URL for this github to download the workflow. Docker image to be updated in next release.
 
 https://labs.epi2me.io/downloads/
