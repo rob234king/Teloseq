@@ -30,6 +30,5 @@ improvements by using `-profile conda,mamba`
 
 ## Running in Epi2me labs via Windows on a laptop (next release)
 
-## download epi2me labs and go to workflows->import workflows and enter the URL for this github to download the workflow. Docker image to be updated in next release.
-
+download epi2me labs and go to workflows->import workflows and enter the URL for this github to download the workflow. Docker image to be updated in next release.
 https://labs.epi2me.io/downloads/
