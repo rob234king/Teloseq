@@ -27,27 +27,27 @@ println """\
          .stripIndent()
 
 file_ch = Channel.fromPath("${params.input}")
-
-barcodeset="${params.barcode}"
-//print(barcodeset)
-/////////////////////////////////////////////
-//get CSV parameter for script
-barcodesMap = [:]
-// Split the input barcodes into individual items
-barcodesList = "${params.barcode}".split(',')
-// // Parse the barcode information and create a map
-barcodesList.each { barcodeInfo ->
-    def (barcode, count) = barcodeInfo.split(':')
-    barcodesMap[barcode] = count.toInteger()
+if( params.barcode ){
+         barcodeset="${params.barcode}"
+         //print(barcodeset)
+         /////////////////////////////////////////////
+         //get CSV parameter for script
+         barcodesMap = [:]
+         // Split the input barcodes into individual items
+         barcodesList = "${params.barcode}".split(',')
+         // // Parse the barcode information and create a map
+         barcodesList.each { barcodeInfo ->
+             def (barcode, count) = barcodeInfo.split(':')
+             barcodesMap[barcode] = count.toInteger()
+         }
+         // Generate the list of barcode names
+         barcodeNames = barcodesMap.keySet()
+         //print(outputFileNames)
+         //print(barcodeNames)
+         def barcodeNamesString = barcodeNames.collect { "${it}.csv " }.join()
+         //print (barcodeNamesString)
+         /////////////////////////////////////////////////
 }
-// Generate the list of barcode names
-barcodeNames = barcodesMap.keySet()
-//print(outputFileNames)
-//print(barcodeNames)
-def barcodeNamesString = barcodeNames.collect { "${it}.csv " }.join()
-//print (barcodeNamesString)
-/////////////////////////////////////////////////
-
 
 workflow {
   //check and unzip reference if needed.
