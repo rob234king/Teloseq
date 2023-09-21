@@ -28,6 +28,11 @@
                     "format": "file-path",
                     "pattern": "^\\S+\\.fastq(?:\\.gz)?$",
                     "description": "Raw fastq file"
+                },
+                "profile": {
+                    "type": "string",
+                    "description": "which setup to use, conda etc",
+                    "help_text": "conda,mamba or conda or docker or local"
                 }
             }
 
