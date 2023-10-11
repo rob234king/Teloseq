@@ -17,7 +17,7 @@ params.barcode = ''
 
 println """\
 
-         O N T   T E L O S E Q    P I P E L I N E  (P R O T O T Y P E : B A S I C v1)
+         O N T   T E L O S E Q    P I P E L I N E  (P R O T O T Y P E : B A S I C v2)
          =================================================================
          Public reference   : ${params.reference}
          Fastq read files   : ${params.input}
@@ -44,8 +44,8 @@ if( params.barcode ){
          barcodeNames = barcodesMap.keySet()
          //print(outputFileNames)
          //print(barcodeNames)
-         def barcodeNamesString = barcodeNames.collect { "${it}.csv " }.join()
-         //print (barcodeNamesString)
+         barcodeNamesString = barcodeNames.collect { "${it}.csv " }.join()
+         print (barcodeNamesString)
          /////////////////////////////////////////////////
 }
 
@@ -71,7 +71,7 @@ workflow {
   }
 
   //filter bam
-  filtering(mappingbam.output)
+  filtering(mappingbam.output, uncompressedRefFile, telomere_reads.out.baseerror1)
 
   //get final telomere arms stats
   results(filtering.out.finalbam, uncompressedRefFile)
@@ -101,7 +101,7 @@ workflow {
 
 process telomere_reads {
 
-    conda 'seqtk seqkit'
+    conda 'seqtk seqkit samtools pandas'
 
     input:
     path "input.fastq.gz"
@@ -110,24 +110,17 @@ process telomere_reads {
     path "telomere_filtered.fastq.gz", emit: fastq
     path "telomere_filtered.fastq", emit: fastq2
     path "raw_data_stats.txt"
-    path "Reads_telomere_stats.txt"
-    path "Reads_telomere_nonTelomere_stats.txt"
-    path "reads_with_cutsites.stats.txt"
-    path "telomere_filtered_stats.txt"
+    path "Basecalling_error_motif_5_500.txt", emit: baseerror1
     
     publishDir "${params.publishDir}/Telomere/", mode: 'copy', overwrite: false
 
     script:
     """
     seqkit stats -a input.fastq.gz > raw_data_stats.txt
-    seqkit grep -s -R 1:1000 -p "TAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCCTAACCC" input.fastq.gz > telomere.fastq
-    seqkit stats -a telomere.fastq > Reads_telomere_stats.txt
-    seqkit grep -v -s -R -1500:-1 -p "TAACCCTAACCCTAACCCTAACCCTAACCC" telomere.fastq > telomereandnon.fastq
-    seqkit stats -a telomereandnon.fastq > Reads_telomere_nonTelomere_stats.txt
-    seqkit grep -v -s -p "CATCCTCCATCCTC","TACCTCATACCT","CTGAGTCCTGAGTC" telomereandnon.fastq > telomere_filtered.fastq
-    seqkit stats -a telomere_filtered.fastq > telomere_filtered_stats.txt
+    seqkit grep -v -s -R -60:-1 -p "TAACCCTAACCCTAACCCTAACCCTAACCC" input.fastq.gz > telomere_filtered.fastq
+    seqkit locate --only-positive-strand -m 0 -p TATAGT,TATACA telomere_filtered.fastq > RK_motif.txt
+    python ${baseDir}/bin/Filter_motif_5_within500.py > Basecalling_error_motif_5_500.txt
     gzip -c telomere_filtered.fastq > telomere_filtered.fastq.gz
-    seqkit grep -s -p "GATATC" telomere_filtered.fastq.gz | seqkit stats -a - > reads_with_cutsites.stats.txt
     """
 }
 
@@ -182,24 +175,44 @@ process mappingbam {
 
 process filtering {
 
-    conda 'samtools pandas numpy seqkit'
+    conda 'samtools pandas numpy seqkit pysam'
 
     input:
     path inputbam
+    path ref2
+    path baseerror
 
     output:
-    path "${inputbam.baseName}_filtered.bam", emit: finalbam
-    path "${inputbam.baseName}_filtered.bam.bai"
+    path "${inputbam.baseName}.filtered.bam", emit: finalbam
+    path "${inputbam.baseName}.filtered.bam.bai"
 
     publishDir "${params.publishDir}/Mapped_telomere/", mode: 'copy', overwrite: false
 
     script:
     """
     samtools index $inputbam
-    seqkit bam $inputbam 2>${inputbam.baseName}.telomereCustomRef_q10.bam.stats
-    python ${baseDir}/bin/Identifyreadstoremove.py ${inputbam.baseName}.telomereCustomRef_q10.bam.stats
-    samtools view -N ID.txt -U ${inputbam.baseName}_filtered.bam -o /dev/null $inputbam
-    samtools index ${inputbam.baseName}_filtered.bam
+    seqkit locate --only-positive-strand -m 0 -p GATATC $ref2 > cutsites2.txt
+    awk '!a[\$1]++' cutsites2.txt > cutsites3.txt
+    awk -F'\t' '{print \$1"\t"\$5"\t"\$5}' cutsites3.txt > cutfirst5.txt
+    grep -v 'seqID' cutfirst5.txt > cutfirst7.bed
+
+    seqkit bam $inputbam 2>${inputbam.baseName}.txt
+
+    seqkit locate --only-positive-strand -m 1 -p TAACCCTAACCCTAACCCTAACCCTAACCC $ref2 > locationstelomere.txt
+    tac locationstelomere.txt | awk '!a[\$1]++' > locationstelomerelast.txt
+    awk -F'\t' '{print \$1"\t"\$5"\t"\$5}' locationstelomerelast.txt | sort -r | tr ' ' '\t' > locationstelomerelast2.txt
+    grep -v 'seqID' locationstelomerelast2.txt > locationstelomerelast2.bed
+    
+    python ${baseDir}/bin/Read_IDs_to_keep.py ${inputbam.baseName}.txt $baseerror cutfirst7.bed locationstelomerelast2.bed id.txt
+
+    awk '!seen[\$0]++' id.txt > id2.txt 
+    samtools view -N id2.txt -o ${inputbam.baseName}.temp.bam $inputbam 
+    samtools index ${inputbam.baseName}.temp.bam
+    python ${baseDir}/bin/duplicate_removal.py ${inputbam.baseName}.temp.bam ${inputbam.baseName}.dedup.bam
+    samtools index ${inputbam.baseName}.dedup.bam
+    samtools view -hq 5 -o ${inputbam.baseName}.filtered.bam ${inputbam.baseName}.dedup.bam
+    samtools index ${inputbam.baseName}.filtered.bam
+
     """
 }
 
